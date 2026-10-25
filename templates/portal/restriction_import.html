@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">Upload a text/CSV file or paste one address per line. Valid rows are added immediately; duplicates are skipped and invalid rows are reported.</p>{% endblock %}
+{% block actions %}<a class="button" href="{% url 'restrictions' %}">Back to restrictions</a>{% endblock %}
+{% block content %}
+<section class="form-panel"><form method="post" enctype="multipart/form-data">{% csrf_token %}{% include 'portal/form_fields.html' %}<div class="form-actions"><button class="button primary" type="submit">Import restrictions</button></div></form></section>
+{% if result %}<section class="steps" aria-labelledby="import-result-heading"><h2 id="import-result-heading">Import results</h2><p class="notice">{{ result.created }} restrictions added. {{ result.duplicates }} duplicates skipped. {{ result.errors|length }} invalid rows.</p>{% if result.errors %}<h3>Invalid rows</h3><ul>{% for error in result.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}<a class="button" href="{% url 'restrictions' %}">View restricted addresses</a></section>{% endif %}
+{% endblock %}

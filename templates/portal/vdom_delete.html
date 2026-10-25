@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% block content %}
+<section class="form-panel"><h2>Delete {{ vdom.firewall.name }} / {{ vdom.name }}?</h2>
+<p>This removes the VDOM from the portal's active configuration and disables future operations for this scope. Requests, scan results and audit history are preserved. The VDOM on the firewall is unchanged. Add the same VDOM name again to restore it.</p>
+{% if error %}<p class="notice error">{{ error }}</p>{% endif %}
+{% if memberships %}<div class="notice warning"><p>Choose another VDOM in these firewall groups before deleting:</p><ul>{% for membership in memberships %}<li><a href="{% url 'firewall_group_edit' membership.group_id %}">{{ membership.group.name }}</a></li>{% endfor %}</ul></div>{% endif %}
+<form method="post">{% csrf_token %}<div class="form-actions"><button type="submit" class="button danger" {% if memberships %}disabled{% endif %}>Delete VDOM</button><a class="button" href="{% url 'firewalls' %}">Cancel</a></div></form></section>
+{% endblock %}

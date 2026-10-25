@@ -1,0 +1,59 @@
+# Python environments, bytecode, and package builds
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+/build/
+/dist/
+
+# Tool caches, test output, and local agent state
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+/htmlcov/
+/coverage.xml
+/junit.xml
+.superpowers/
+
+# Local configuration and private credentials (keep example files)
+.env
+.env.*
+!.env.example
+!.env.*.example
+.envrc
+/secrets/
+*.key
+*.p12
+*.pfx
+
+# Runtime data, uploads, database sidecars, backups, and collected assets
+/data/
+/staticfiles/
+/backups/
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.log
+*.log.*
+
+# Frontend dependencies and package-manager caches
+node_modules/
+.npm/
+
+# Editor and operating-system temporary files
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini

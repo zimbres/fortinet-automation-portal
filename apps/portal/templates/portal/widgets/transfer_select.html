@@ -1,0 +1,24 @@
+<div class="transfer-select" data-transfer-select>
+  {% include 'django/forms/widgets/select.html' %}
+  <div class="transfer-select__ui" hidden>
+    <div class="transfer-select__columns">
+      <section class="transfer-select__pane">
+        <div class="transfer-select__heading"><label for="{{ widget.attrs.id }}_available_search">Available</label><span data-transfer-count="available"></span></div>
+        <input type="search" id="{{ widget.attrs.id }}_available_search" placeholder="Filter available items" data-transfer-filter="available" autocomplete="off">
+        <select class="transfer-select__list" data-transfer-list="available" multiple size="7" aria-label="Available items"></select>
+      </section>
+      <div class="transfer-select__actions">
+        <button class="button" type="button" data-transfer-action="add" disabled><span>Add</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button>
+        <button class="button" type="button" data-transfer-action="add-all" disabled><span>Add all</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 6 6 6-6 6m9-12 6 6-6 6"/></svg></button>
+        <button class="button" type="button" data-transfer-action="remove" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg><span>Remove</span></button>
+        <button class="button" type="button" data-transfer-action="remove-all" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 6-6 6 6 6M11 6l-6 6 6 6"/></svg><span>Remove all</span></button>
+      </div>
+      <section class="transfer-select__pane">
+        <div class="transfer-select__heading"><label for="{{ widget.attrs.id }}_selected_search">Selected</label><span data-transfer-count="selected"></span></div>
+        <input type="search" id="{{ widget.attrs.id }}_selected_search" placeholder="Filter selected items" data-transfer-filter="selected" autocomplete="off">
+        <select class="transfer-select__list" data-transfer-list="selected" multiple size="7" aria-label="Selected items"></select>
+      </section>
+    </div>
+    <p class="transfer-select__status" role="status" aria-live="polite" aria-atomic="true"></p>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">Protect addresses that operators must not add. Administrators can explicitly override a restriction; each override is audited.</p>{% endblock %}
+{% block actions %}<div class="toolbar"><a class="button" href="{% url 'restriction_import' %}">Import list</a><a class="button primary" href="{% url 'restriction_new' %}">Add restriction</a></div>{% endblock %}
+{% block content %}
+<form method="get" class="toolbar" hx-get="{% url 'restrictions' %}" hx-trigger="input delay:300ms, submit" hx-target="#restriction-results" hx-select="#restriction-results" hx-swap="outerHTML" hx-replace-url="true" hx-sync="this:replace">
+  <label for="restriction-search">Search restrictions</label><input type="search" id="restriction-search" name="q" value="{{ query }}" placeholder="Address or domain" aria-controls="restriction-results" autocomplete="off">
+</form>
+<p class="help">IPv4 ranges are checked for overlap. Domains protect their subdomains; *.domain.com protects descendants. No DNS lookup is performed. Existing objects and installations are unchanged.</p>
+<div id="restriction-results" data-search-results aria-live="polite"><div class="table-wrap"><table>
+<thead><tr><th scope="col">Type</th><th scope="col">Restricted value</th><th scope="col">Updated by</th><th scope="col">Actions</th></tr></thead>
+<tbody>{% for rule in records %}<tr><td>{{ rule.get_kind_display }}</td><td class="mono">{{ rule.value }}</td><td>{{ rule.updated_by.get_full_name|default:rule.updated_by.username }}<br><span class="small muted">{{ rule.updated_at }}</span></td><td><a href="{% url 'restriction_edit' rule.pk %}" aria-label="Edit {{ rule.value }}">Edit</a> · <a href="{% url 'restriction_delete' rule.pk %}" aria-label="Delete {{ rule.value }}">Delete</a></td></tr>
+{% empty %}<tr><td colspan="4"><div class="empty"><h2>{% if query %}No matching restrictions{% else %}No restricted addresses yet{% endif %}</h2><p>{% if query %}Try another search or clear the filter.{% else %}Add a protected address or import a list to prevent operators from adding matching objects.{% endif %}</p></div></td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

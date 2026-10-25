@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">Manage your personal information and account password.</p>{% endblock %}
+{% block content %}
+<div class="profile-sections">
+<section class="form-panel" aria-labelledby="picture-heading"><h2 id="picture-heading">Profile picture</h2>
+<div class="avatar-preview"><div class="profile-avatar">{% include 'portal/user_avatar.html' %}</div><p class="muted">{% if user.avatar %}Using your uploaded picture.{% else %}Using Gravatar for your email, with your initial as a fallback.{% endif %}</p></div>
+<form method="post" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="action" value="avatar">
+{% include 'portal/form_fields.html' with form=avatar_form %}
+<div class="form-actions"><button class="button primary" type="submit">Upload picture</button></div></form>
+{% if user.avatar %}<form method="post" class="avatar-reset">{% csrf_token %}<input type="hidden" name="action" value="avatar_remove"><button class="button" type="submit">Use Gravatar</button></form>{% endif %}
+</section>
+<section class="form-panel" aria-labelledby="profile-heading"><h2 id="profile-heading">Personal information</h2>
+{% if oidc_managed %}<p class="muted">Your personal information is managed by your identity provider.</p>
+<dl class="details"><dt>First name</dt><dd>{{ user.first_name|default:'Not set' }}</dd><dt>Last name</dt><dd>{{ user.last_name|default:'Not set' }}</dd><dt>Email</dt><dd>{{ user.email }}</dd></dl>
+{% else %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="profile">
+{% include 'portal/form_fields.html' with form=profile_form %}
+<div class="form-actions"><button class="button primary" type="submit">Save profile</button></div></form>{% endif %}</section>
+<section class="form-panel" aria-labelledby="password-heading"><h2 id="password-heading">Change password</h2>
+{% if password_form %}<p class="muted">Enter your current password to choose a new one.</p>
+<form method="post">{% csrf_token %}<input type="hidden" name="action" value="password">
+{% include 'portal/form_fields.html' with form=password_form %}
+<div class="form-actions"><button class="button primary" type="submit">Update password</button></div></form>
+{% else %}<p class="muted">Change your password through your identity provider. This account does not use a local password.</p>{% endif %}</section>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">{{ created|length }} object{{ created|length|pluralize }} stored locally. {{ batch.refused_rows|length }} address{{ batch.refused_rows|length|pluralize:'es' }} refused. No firewall changes were made.</p>{% endblock %}
+{% block actions %}<div class="toolbar"><a class="button" href="{% url 'import_objects' %}">Import another list</a><a class="button primary" href="{% url 'objects' %}">View address objects</a></div>{% endblock %}
+{% block content %}
+{% if created %}<section class="steps"><h2>Created objects</h2><div class="table-wrap"><table><thead><tr><th scope="col">Name</th><th scope="col">Value</th></tr></thead><tbody>{% for obj in created %}<tr><td>{{ obj.entry.name }}</td><td class="mono">{{ obj.value }}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
+<section class="steps">{% include 'portal/catalog_refused_rows.html' %}<p class="help">Refused addresses were not created. An Administrator or Superadministrator can review the restrictions or submit a new import with an explicit override.</p></section>
+{% endblock %}

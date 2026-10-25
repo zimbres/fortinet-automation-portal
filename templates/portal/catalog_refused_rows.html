@@ -1,0 +1,2 @@
+<h3>Refused addresses ({{ batch.refused_rows|length }})</h3>
+<div class="table-wrap"><table><thead><tr><th scope="col">Name</th><th scope="col">Value</th><th scope="col">Reason</th></tr></thead><tbody>{% for row in batch.refused_rows %}<tr><td>{{ row.name }}</td><td class="mono">{{ row.value }}</td><td>{{ row.reason }}</td></tr>{% endfor %}</tbody></table></div>

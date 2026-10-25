@@ -1,0 +1,8 @@
+<div class="pagination-row">
+<p class="small muted" role="status">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} requests</p>
+{% if page_obj.has_other_pages %}<nav class="pagination" aria-label="Operation history pages" hx-boost="true" hx-target="#request-results" hx-select="#request-results" hx-swap="outerHTML" hx-push-url="true" hx-sync="#request-results:replace">
+{% if page_obj.has_previous %}<a class="button" href="?q={{ query|urlencode }}&amp;page={{ page_obj.previous_page_number }}">Previous</a>{% else %}<span class="button" aria-disabled="true">Previous</span>{% endif %}
+{% for number in page_numbers %}{% if number == page_obj.paginator.ELLIPSIS %}<span class="pagination-ellipsis">{{ number }}</span>{% elif number == page_obj.number %}<span class="button" aria-current="page" aria-label="Page {{ number }}">{{ number }}</span>{% else %}<a class="button" href="?q={{ query|urlencode }}&amp;page={{ number }}" aria-label="Page {{ number }}">{{ number }}</a>{% endif %}{% endfor %}
+{% if page_obj.has_next %}<a class="button" href="?q={{ query|urlencode }}&amp;page={{ page_obj.next_page_number }}">Next</a>{% else %}<span class="button" aria-disabled="true">Next</span>{% endif %}
+</nav>{% endif %}
+</div>

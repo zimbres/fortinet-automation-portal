@@ -1,0 +1,1 @@
+<span class="status {{ status|lower }}">{% if status == "PARTIALLY_SUCCEEDED" %}Partially succeeded{% elif status == "RECONCILIATION_REQUIRED" %}Reconciliation required{% else %}{{ status|title }}{% endif %}</span>

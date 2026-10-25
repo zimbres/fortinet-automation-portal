@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "tokens": {
+    "colors": {"ink":"#172d2a","muted":"#536661","accent":"#075f4b","line":"#dce4df","paper":"#ffffff","wash":"#f4f7f4","sidebar":"#102f29"},
+    "radius": {"control":"6px","panel":"10px"},
+    "font": {"body":"Segoe UI, Arial, sans-serif","data":"Consolas, monospace"},
+    "spacing": {"field":"24px","panel":"26px","page":"40px"},
+    "focus": {"width":"2px","color":"#08735a","offset":"3px"}
+  },
+  "implementation": "static/src/app.css",
+  "note": "Authored from implemented CSS; launcher validation unavailable."
+}

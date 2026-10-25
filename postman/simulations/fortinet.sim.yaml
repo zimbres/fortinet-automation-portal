@@ -1,0 +1,5 @@
+simulation: fortinet-local
+routing: path
+mocks:
+  - routeKey: fortinet
+    path: ../mocks/fortinet/config.yaml

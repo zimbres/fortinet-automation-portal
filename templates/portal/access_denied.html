@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}<section class="form-panel" data-access-denied>
+<div class="section-heading"><h2>You need additional access to continue.</h2></div>
+<p>Ask your superadministrator for {{ required_access }}.</p>
+<div class="form-actions"><a class="button" href="{% url 'dashboard' %}">Return to Overview</a></div>
+</section>{% endblock %}

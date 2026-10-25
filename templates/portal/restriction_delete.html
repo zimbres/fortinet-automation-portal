@@ -1,0 +1,3 @@
+{% extends 'base.html' %}
+{% block content %}<section class="form-panel"><h2>Delete restriction for {{ rule.value }}?</h2><p>Operators will be able to add this address unless another restriction matches it. Existing objects and installations are unchanged.</p>
+<form method="post">{% csrf_token %}<div class="form-actions"><button class="button danger" type="submit">Delete restriction</button><a class="button" href="{% url 'restrictions' %}">Cancel</a></div></form></section>{% endblock %}

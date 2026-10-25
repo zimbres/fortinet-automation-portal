@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">Paste one address per line or upload a text/CSV file. Preview first; confirmation creates allowed addresses and reports restriction refusals. Other validation errors must be corrected before importing.</p>{% endblock %}
+{% block actions %}<a class="button" href="{% url 'import_example' %}">Download example CSV</a>{% endblock %}
+{% block content %}
+<section class="form-panel"><form method="post" enctype="multipart/form-data">{% csrf_token %}{% include 'portal/form_fields.html' %}<div class="form-actions"><button class="button primary" type="submit">Preview list</button></div></form></section>
+{% if batch %}<section class="steps"><h2>Import preview</h2>
+{% if batch.group_snapshot %}<p class="notice">Add new objects to <strong>{{ batch.group_snapshot.name }}</strong>. Existing members will be kept.</p>{% endif %}
+{% if batch.override_restrictions %}<p class="notice">Administrator override is enabled for this import. Every matching address saved will have an audit event.</p>{% endif %}
+{% for error in batch.errors %}<p class="notice error">{{ error }}</p>{% endfor %}
+<p>{{ batch.allowed_rows|length }} allowed. {{ batch.refused_rows|length }} refused.</p>
+{% if batch.allowed_rows %}<div class="table-wrap"><table><thead><tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Value</th></tr></thead><tbody>{% for row in batch.allowed_rows %}<tr><td>{{ row.name }}</td><td>{% if row.kind == 'subnet' %}IPv4 host / subnet{% elif row.kind == 'wildcard_fqdn' %}Wildcard FQDN{% else %}FQDN{% endif %}</td><td class="mono">{{ row.value }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+{% if batch.refused_rows %}{% include 'portal/catalog_refused_rows.html' %}{% endif %}
+{% if not batch.errors %}<form method="post" action="{% url 'confirm_objects' batch.pk %}" class="form-actions">{% csrf_token %}<button class="button primary" type="submit">{% if batch.allowed_rows %}Create {{ batch.allowed_rows|length }} objects locally{% else %}Confirm import results{% endif %}</button></form><p class="help">Preview expires in 30 minutes. Restrictions and access are checked again at confirmation, so the final counts may change. This does not request installation.</p>{% endif %}
+</section>{% endif %}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">Review the selected local address objects before deleting them.</p>{% endblock %}
+{% block content %}<section class="form-panel"><h2>Delete {{ entries|length }} selected object{{ entries|length|pluralize }}?</h2>
+<p class="help">This removes local definitions only. Installed firewall configuration and submitted requests remain unchanged.</p>
+<ul class="bulk-delete-list">{% for entry in entries %}<li><strong>{{ entry.name }}</strong><span class="mono muted">{{ entry.address.value }}</span></li>{% endfor %}</ul>
+<form method="post" action="{% url 'delete_selected_objects' %}">{% csrf_token %}<input type="hidden" name="confirmation" value="{{ confirmation }}"><input type="hidden" name="q" value="{{ query }}">
+<div class="form-actions"><button class="button danger" type="submit">Delete {{ entries|length }} object{{ entries|length|pluralize }} locally</button><a class="button" href="{% url 'objects' %}?q={{ query|urlencode }}">Cancel</a></div></form>
+<p class="help">Confirmation expires in 15 minutes. If any selected object changes or belongs to a group, no objects will be deleted.</p>
+</section>{% endblock %}

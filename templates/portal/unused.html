@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">Scan a firewall group to assess address objects and address groups that also exist in the local catalog. Each scan replaces the previous result per firewall / VDOM; audit events are retained.</p>{% endblock %}
+{% block content %}
+<form method="post" class="toolbar">{% csrf_token %}{{ form.non_field_errors }}{{ form.firewall_group.label_tag }}{{ form.firewall_group }}{{ form.firewall_group.errors }}<button class="button" type="submit" name="action" value="view">View results</button><button class="button primary" type="submit" name="action" value="scan">Scan group usage</button></form>
+{% if selected_group %}<p class="small muted">Firewall group: <strong>{{ selected_group.name }}</strong> &middot; {{ scans|length }} saved firewall / VDOM result{{ scans|length|pluralize }}.</p>{% endif %}
+{% for scan in scans %}
+<section class="panel scan">
+<div class="section-heading"><h2>{{ scan.vdom }}</h2><time>{{ scan.created_at|date:'M d, H:i' }}</time></div>
+<p class="small muted">{{ scan.coverage }}</p>
+{% if not scan.complete %}<div class="notice warning">Scan incomplete. No unused-object or unused-group conclusion can be drawn.</div>{% endif %}
+<h3>Address objects</h3>
+{% include 'portal/usage_findings.html' with findings=scan.findings resource='address objects' %}
+<h3 class="steps">Address groups</h3>
+{% if scan.group_findings == None %}<p class="muted">Address-group usage was not assessed in this older result. Run a group scan to update it.</p>{% else %}{% include 'portal/usage_findings.html' with findings=scan.group_findings resource='address groups' %}{% endif %}
+</section>
+{% empty %}<section class="empty"><h3>No scans yet</h3><p>Select a firewall group and run a read-only scan to inspect policy and nested-group references.</p></section>{% endfor %}
+{% endblock %}
