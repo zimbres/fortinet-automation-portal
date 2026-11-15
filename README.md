@@ -38,6 +38,15 @@ Select local objects, address groups, and an authorized firewall group, then pre
 </details>
 
 <details>
+<summary>Publish approved Threat Feeds</summary>
+
+Publish approved IP and domain lists for each firewall group and address group. View publication status and revision, copy the feed URLs, request updates, and manage the feed accounts explicitly assigned to each publication.
+
+![Threat Feeds configuration showing scoped publications, IP and domain URLs, approval revisions, and feed-account assignments](docs/assets/tf.png)
+
+</details>
+
+<details>
 <summary>Manage firewall connections</summary>
 
 Administrators manage device endpoints, VDOMs, and connection checks. A successful connection check does not by itself establish write compatibility.
@@ -87,15 +96,89 @@ In **Configuration → Threat feeds**, create separate feed accounts and explici
 Disabling an account/publication or firewall group, removing an account assignment, or revoking publication access stops downloads immediately. Republishing a disabled/revoked feed requires a new approved request. Revocation retains its revision history and clears account assignments; disabling alone preserves assignments. Publication, approval, credential configuration and revocation changes are audited without passwords.
 
 Use **Request update** on a published feed to open its fixed firewall-group/address-group scope. Preview and approval details show only added/removed IPs and domains, or a publication-state change. Unchanged values and unchanged feeds are excluded; requests with no changes are refused. Standalone object controls are unavailable for the Threat Feeds target. Approved full snapshots are still stored and published atomically. Feed records without a firewall-group scope are removed by the cleanup migration; accounts, catalog entries and approved history remain.
-### Threat Feed implementation references
 
-- **Design and implementation record:** [approved publication design](docs/superpowers/specs/2026-11-15-approved-threat-feeds-design.md), [approval/scoping implementation plan](docs/superpowers/plans/2026-11-15-approved-threat-feeds.md), and [fixed update screens and cleanup](docs/superpowers/plans/2026-11-15-feed-update-refinements.md).
-- **Requests and publication:** [snapshot, delta, URL reservation and atomic publication service](apps/changes/feed_publications.py), [shared submission and approval flow](apps/changes/installations.py), and [executor dispatch](apps/changes/installation_executor.py).
-- **Downloads and access:** [Basic-auth download and management views](apps/portal/threat_feed_views.py), [feed-account permissions and revocation](apps/inventory/threat_feeds.py), and [account assignment forms](apps/inventory/threat_feed_forms.py).
-- **Storage and routing:** [feed, scope, identity and account models](apps/inventory/models.py), [URL routes](config/urls.py), [public URL configuration](config/public_url.py), and [unscoped-feed cleanup migration](apps/inventory/migrations/0013_remove_unscoped_feeds.py).
-- **Verification:** [authentication and text output tests](tests/test_threat_feeds.py), [approval and publication tests](tests/test_feed_approvals.py), [fixed-scope update and delta tests](tests/test_feed_update_ui.py), and [migration/data-preservation tests](tests/test_feed_approval_migration.py).
+### How the Threat Feed implementation works
 
-**Authentication performance:** every feed download currently verifies its Basic-auth password using Django's configured password hasher. With PBKDF2-SHA256 at 1,500,000 iterations, local measurements showed approximately 1.0–1.1 seconds for password verification, compared with milliseconds for database lookups. Downloads serve stored approved text; they do not regenerate lists from the catalog. Successful authentication is not currently cached.
+The implementation connects the local catalog to an approved, versioned publication. Its lifecycle is:
+
+```text
+Address-group members → Request snapshot → Approval → Executor → Stored feed text → Authenticated download
+```
+
+1. **Prepare the proposed content.** The requester selects a firewall group and address groups. The backend reads each group's members, separates IPv4 hosts/subnets from domains, removes duplicates and sorts the values. It compares the proposed lists with the currently published lists and records additions, removals and any enable-publication action. Groups with no changes are excluded; an entirely unchanged request is refused.
+2. **Capture the request.** Submission stores the complete proposed content, the displayed changes, source catalog revisions, stable URL identifiers and the current publication revision in an immutable snapshot. A digest protects that intent. URL identities are reserved at submission so separate pending requests cannot claim the same URL for different groups. Previewing alone does not reserve identities or publish anything.
+3. **Obtain approval.** The normal approval workflow checks the selected firewall group's permissions. Submission does not automatically approve or publish, including for Superadministrators. Their existing self-approval permission requires an explicit approval action. Pending, rejected and cancelled requests leave the current feed available.
+4. **Publish through the executor.** The executor rechecks approval, snapshot integrity and requester/approver access. It also checks that the publication revision still matches the version captured at submission. If another request published or an administrator revoked access in the meantime, the stale request fails and must be resubmitted. All groups in one request publish in a single database transaction, together with successful request completion. No FortiGate API call is involved.
+5. **Serve the approved version.** A connector downloads the stored IP or domain text using a separately provisioned feed account. Each download checks that account's password, active state and assignment to the exact firewall-group/address-group publication. It also checks publication availability and the firewall group's enabled state. Catalog edits never change this stored version without another approved request.
+
+#### Data stored for feeds
+
+The [inventory models](apps/inventory/models.py) separate URL identity, published content and connector credentials:
+
+| Model | Responsibility |
+|---|---|
+| `ThreatFeedScope` | Associates a firewall group with its persistent URL slug. Renaming the firewall group does not change existing URLs. |
+| `ThreatFeedIdentity` | Reserves an address group's slug within a scope, including while requests await approval. A reservation contains no downloadable content and grants no access. |
+| `ThreatFeed` | Stores the scoped address-group publication: approved IP/domain text, revision, enabled state and the request that successfully published it. |
+| `FeedAccount` | Stores a separate connector username, hashed password, active state and explicit publication assignments. It is not a portal `User` and cannot establish a portal session. |
+| `InstallationRequest` | Stores submitted intent, its digest, requester, approver, approval/execution states and errors. Feed requests use `snapshot.target_kind = "threat_feeds"` and have no device destinations. |
+
+#### Main functions and their responsibilities
+
+| Function | What it does |
+|---|---|
+| [`require_feed_request_permission()`](apps/changes/feed_publications.py) | Checks view and requested capability on the firewall group. Submission additionally requires feed-management privileges and catalog-view access. |
+| [`prepare_feed_scope()`](apps/changes/feed_publications.py) | Creates or reuses the firewall group's stable namespace during submission. This does not publish a feed. |
+| [`build_feed_snapshot()`](apps/changes/feed_publications.py) | Validates the selected address groups, rejects standalone objects, produces normalized IP/domain lists and captures their changes against the published version. Returns the full proposed snapshot, excluding unchanged feeds. |
+| [`reserve_feed_identities()`](apps/changes/feed_publications.py) | Persists the exact scoped slugs captured by the request, preventing collisions between pending requests. A conflicting concurrent reservation requires a fresh preview. |
+| [`submit_installation()`](apps/changes/installations.py) | Captures and validates the immutable snapshot, checks the submission key for duplicate/different intent, reserves feed identities and creates a pending approval request with an audit event. |
+| [`decide_installation()`](apps/changes/installations.py) | Applies an authorized approve, reject or cancel decision. Checks request state and current group permissions; approval itself does not replace published content. |
+| [`execute_next_installation()`](apps/changes/installation_executor.py) | Claims an approved pending request and dispatches the Threat Feeds target to local publication instead of the firewall installation path. |
+| [`execute_feed_request()`](apps/changes/feed_publications.py) | Verifies approved intent and access, rejects stale publication revisions, writes the approved text atomically, increments revisions and records execution results. Failed local transactions leave the previous content intact. |
+| [`feed_snapshot_urls()`](apps/changes/feed_publications.py) | Adds display URLs, counts and captured changes to request previews/details. The public deployment URL is presentation data and is not embedded in approved intent. |
+| [`new_installation()` and `InstallationForm`](apps/portal/installation_views.py) | Handle preview and submission. An existing-feed update binds to that feed, locks both groups and rejects a stale update-screen revision. The [form validation](apps/changes/forms.py) also rejects forged standalone-object selections for Threat Feeds. |
+| [`download()`](apps/portal/threat_feed_views.py) | Processes Basic authentication and scoped authorization, then returns the stored IP or domain text. Supports GET and HEAD and prevents response caching. |
+| [`save_feed_account()`](apps/inventory/threat_feeds.py) | Creates or edits connector credentials, validates and hashes a replacement password, replaces explicit assignments and audits the configuration without logging passwords. A blank password on edit keeps the existing hash. |
+| [`disable_feed()`](apps/inventory/threat_feeds.py) | Stops downloads and increments the revision so requests submitted before the disable cannot silently re-enable the publication. A new approved request is required. |
+| [`delete_feed_configuration()`](apps/inventory/threat_feeds.py) | Deletes a feed account when requested. For publication revocation, it disables the publication and clears account assignments while retaining the publication's revision record. |
+| [`normalize_public_url()`](config/public_url.py) | Validates the configured HTTP/HTTPS base URL and optional path prefix, rejects embedded credentials/query/fragment, removes trailing slashes and supplies the localhost default when unset or empty. |
+
+#### Updating an existing feed
+
+**Request update** opens the specific feed with the firewall group and address group fixed. Its preview and approval details display only changes captured for that request. Standalone object controls are unavailable for this target, and server validation enforces the same rule.
+
+For example, if the published IP list contains `192.0.2.1/32` and the catalog group now contains `192.0.2.2/32`, the update shows:
+
+```text
+Added IP addresses:   192.0.2.2/32
+Removed IP addresses: 192.0.2.1/32
+```
+
+An unchanged domain list is omitted from the change preview but remains in the complete approved snapshot. After approval and successful execution, the IP list changes and the unchanged domains remain. Editing the catalog again after submission does not rewrite the submitted changes. A disabled publication can also produce an explicit **Enable publication** change even when its indicator values are unchanged.
+
+#### Download behavior and troubleshooting
+
+The [download routes](config/urls.py) identify both scopes:
+
+```text
+GET /threat-feeds/<firewall-group>/<address-group>/ip_list.txt
+GET /threat-feeds/<firewall-group>/<address-group>/domain_list.txt
+```
+
+| Result | Meaning |
+|---|---|
+| `200` | Authentication and assignment checks passed; the response contains the stored approved text. An approved empty list has an empty body. |
+| `401` | Basic credentials are missing/invalid, or the feed account is inactive. The response includes a Basic authentication challenge. Portal login credentials or a browser session do not substitute for feed credentials. |
+| `404` | The requested publication is unavailable, disabled or outside the account's assignments, its firewall group is disabled, or the requested file/path does not exist. |
+| `405` | The client used a method other than GET or HEAD. |
+
+If approval succeeds but the feed has not updated, check that `manage.py run_executor` is running and inspect the request's execution status. An execution failure reporting a changed publication means a newer revision or revocation invalidated the request; create a fresh request. A successful download that takes about a second may be dominated by password hashing: every download currently verifies Basic credentials with Django's configured hasher. Local measurements with PBKDF2-SHA256 at 1,500,000 iterations showed approximately 1.0–1.1 seconds for verification and milliseconds for database lookups. Authentication is not currently cached.
+
+#### Verification and design records
+
+Behavior is covered by [authentication/text-output tests](tests/test_threat_feeds.py), [approval/publication tests](tests/test_feed_approvals.py), [fixed-scope update and delta tests](tests/test_feed_update_ui.py), and [migration/data-preservation tests](tests/test_feed_approval_migration.py). The [cleanup migration](apps/inventory/migrations/0013_remove_unscoped_feeds.py) removes unsupported unscoped publications and their account links while preserving accounts, catalog entries, scoped publications and request history.
+
+See the [approved design](docs/superpowers/specs/2026-11-15-approved-threat-feeds-design.md), [approval/scoping implementation record](docs/superpowers/plans/2026-11-15-approved-threat-feeds.md), and [update-screen/cleanup implementation record](docs/superpowers/plans/2026-11-15-feed-update-refinements.md) for the recorded decisions and validation.
 
 ## Local setup
 
