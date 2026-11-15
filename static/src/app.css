@@ -1,5 +1,17 @@
 @import "tailwindcss";
 @source "../../templates";
+@layer components {
+  .installation-snapshot .mono { overflow-wrap:anywhere; }
+  .installation-snapshot h4 { font-size:.9rem; font-weight:600; margin:18px 0 8px; }
+  .form-panel .installation-snapshot { margin-bottom:24px; }
+  .feed-configuration h2 { margin:28px 0 16px; }
+  .feed-configuration .table-wrap + h2 { margin-top:36px; }
+  .feed-configuration > .help { margin-bottom:18px; }
+  .feed-configuration td label { display:block; margin-bottom:6px; }
+  .feed-configuration td input + label { margin-top:14px; }
+  .feed-configuration td:has(input) { min-width:250px; width:55%; }
+  .feed-configuration td .mono { font-size:.85rem; }
+}
 @layer base {
   :root { --ink:#172d2a; --muted:#536661; --accent:#075f4b; --line:#dce4df; --paper:#fff; --wash:#f4f7f4; font-family:Segoe UI,Arial,sans-serif; color:var(--ink); background:var(--wash); font-size:14px; }
 

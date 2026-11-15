@@ -77,6 +77,7 @@ class InstallationRequest(models.Model):
     approval_status = models.CharField(max_length=12, default='PENDING')
     execution_status = models.CharField(max_length=30, default='PENDING')
     recovery_required = models.BooleanField(default=False)
+    error_message = models.CharField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True)
     started_at = models.DateTimeField(null=True)

@@ -9,7 +9,7 @@ from .base import *  # noqa: F403
 
 SECRET_KEY = secret_value('DJANGO_SECRET_KEY', default='development-only-not-for-production-fortinet-portal')
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '*']
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 if not PORTAL_ENCRYPTION_KEYS and not os.environ.get('PORTAL_ENCRYPTION_KEYS_FILE'):
     local_keys = BASE_DIR / '.cache' / 'encryption.keys'

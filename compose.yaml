@@ -4,6 +4,7 @@ x-app: &app
     dockerfile: docker/Dockerfile
   environment:
     DJANGO_SETTINGS_MODULE: config.settings.production
+    APP_PUBLIC_URL: ${APP_PUBLIC_URL:-}
     DJANGO_SECRET_KEY_FILE: /run/secrets/django_secret_key
     PORTAL_ENCRYPTION_KEYS_FILE: /run/secrets/encryption_keys
     DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?Set the portal hostname}

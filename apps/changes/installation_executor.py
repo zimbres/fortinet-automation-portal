@@ -159,6 +159,9 @@ def execute_next_installation(*, owner_id):
     item = InstallationRequest.objects.filter(approval_status='APPROVED', execution_status='PENDING', recovery_required=False).order_by('created_at').first()
     if not item or not InstallationRequest.objects.filter(pk=item.pk, approval_status='APPROVED', execution_status='PENDING', recovery_required=False).update(execution_status='RUNNING', started_at=timezone.now()):
         return None
+    if item.snapshot.get('target_kind') == 'threat_feeds':
+        from .feed_publications import execute_feed_request
+        return execute_feed_request(request_id=item.pk, owner_id=owner_id)
     for target in item.targets.order_by('pk'):
         try:
             heartbeat(owner_id)

@@ -79,6 +79,8 @@ def delete_catalog_entry(*, actor, entry_id, expected_revision):
         raise ValidationError('This catalog entry changed. Reload it before deleting.')
     if entry.entry_type == 'address' and entry.address.address_groups.exists():
         raise ValidationError('Remove this object from local address groups before deleting it.')
+    if entry.entry_type == 'group' and entry.address_group.threat_feeds.exists():
+        raise ValidationError('This address group is referenced by Threat Feed publications and cannot be deleted.')
     # Acquire a write claim before deleting; concurrent stale mutations cannot win.
     if not CatalogEntry.objects.filter(pk=entry_id, revision=expected_revision).update(revision=F('revision') + 1):
         raise ValidationError('This catalog entry changed.')

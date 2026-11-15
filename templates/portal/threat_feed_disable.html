@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<section class="form-panel"><p>Disable <strong>{{ feed }}</strong>? Downloads stop immediately. A new approved request is required to publish again.</p><form method="post">{% csrf_token %}<input type="hidden" name="action" value="disable"><div class="form-actions"><button class="button danger" type="submit">Disable publication</button><a class="button" href="{% url 'threat_feeds' %}">Cancel</a></div></form></section>{% endblock %}

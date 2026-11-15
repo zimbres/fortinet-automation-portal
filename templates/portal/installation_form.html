@@ -1,1 +1,18 @@
-{% extends 'base.html' %}{% block subtitle %}<p class="muted">Select local definitions and a firewall group. Approval is required. Superadministrators may approve their own requests; other users need another authorized approver.</p>{% endblock %}{% block content %}<section class="form-panel"><form method="post">{% csrf_token %}{% include 'portal/form_fields.html' %}<div class="form-actions"><button class="button" name="action" value="preview">Preview installation</button>{% if snapshot %}<button class="button primary" name="action" value="submit">Submit for approval</button>{% endif %}</div></form></section>{% if snapshot %}<section class="steps">{% include 'portal/installation_snapshot.html' %}<p class="notice">Submission captures the current catalog and destinations. Review the submitted snapshot before approval.</p></section>{% endif %}{% endblock %}
+{% extends 'base.html' %}{% load static %}
+{% block subtitle %}<p class="muted">{% if update_feed %}Review the changes for this feed. Its firewall group and address group are fixed.{% else %}Select a target, local definitions and a firewall group.{% endif %} Every request requires approval. Superadministrators may approve their own requests; other users need another authorized approver.</p>{% endblock %}
+{% block content %}
+<section class="form-panel">
+{% if update_feed %}<dl class="details"><dt>Target</dt><dd>Threat Feeds</dd><dt>Firewall group</dt><dd>{{ update_feed.scope.firewall_group.name }}</dd><dt>Address group</dt><dd>{{ update_feed.group.entry.name }}</dd><dt>Published revision</dt><dd>{{ update_feed.revision }}</dd></dl>{% endif %}
+{% if change_notice %}<p class="notice">{{ change_notice }}</p>{% endif %}
+<form method="post" data-request-target-form>{% csrf_token %}{{ form.non_field_errors }}
+{% for field in form %}
+  {% if field.is_hidden %}{{ field }}{{ field.errors }}
+  {% elif field.name == 'objects' %}{% if not update_feed %}<fieldset data-request-objects {% if form.is_feed_target %}disabled hidden{% endif %}>{% include 'portal/request_field.html' %}</fieldset>{% endif %}
+  {% else %}{% include 'portal/request_field.html' %}{% endif %}
+{% endfor %}
+{% if update_feed and snapshot %}{% include 'portal/installation_snapshot.html' %}{% endif %}
+<div class="form-actions"><button class="button" name="action" value="preview">{% if update_feed %}Refresh changes{% else %}Preview request{% endif %}</button>{% if snapshot %}<button class="button primary" name="action" value="submit">Submit for approval</button>{% endif %}</div>
+</form></section>
+{% if snapshot and not update_feed %}<section class="steps">{% include 'portal/installation_snapshot.html' %}<p class="notice">Submission captures the current definitions and target scope. Review the submitted snapshot before approval.</p></section>{% endif %}
+<script src="{% static 'request-target.js' %}" defer></script>
+{% endblock %}

@@ -18,6 +18,11 @@ def installation_digest(snapshot):
 
 
 def build_snapshot(*, actor, object_ids, group_ids, target_kind, vdom_id=None, firewall_group_id=None):
+    if target_kind == 'threat_feeds':
+        if vdom_id:
+            raise ValidationError('Threat Feeds targets a firewall group, not a VDOM.')
+        from .feed_publications import build_feed_snapshot
+        return build_feed_snapshot(actor=actor, object_ids=object_ids, group_ids=group_ids, firewall_group_id=firewall_group_id)
     require_catalog_capability(actor, 'catalog_view')
     scopes = resolve_destinations(actor=actor, target_kind=target_kind, vdom_id=vdom_id, firewall_group_id=firewall_group_id)
     objects = list(AddressObject.objects.filter(pk__in=set(object_ids)).select_related('entry'))
@@ -38,6 +43,9 @@ def build_snapshot(*, actor, object_ids, group_ids, target_kind, vdom_id=None, f
 def submit_installation(*, actor, object_ids, group_ids, target_kind, idempotency_key, vdom_id=None, firewall_group_id=None):
     if not idempotency_key or len(idempotency_key) > 100:
         raise ValidationError('A valid submission key is required.')
+    if target_kind == 'threat_feeds':
+        from .feed_publications import prepare_feed_scope
+        prepare_feed_scope(actor=actor, firewall_group_id=firewall_group_id)
     snapshot = build_snapshot(actor=actor, object_ids=object_ids, group_ids=group_ids, target_kind=target_kind, vdom_id=vdom_id, firewall_group_id=firewall_group_id)
     for definition in snapshot['objects'] + snapshot['groups']:
         if not CatalogEntry.objects.filter(pk=definition['entry_id'], revision=definition['revision']).exists():
@@ -48,6 +56,9 @@ def submit_installation(*, actor, object_ids, group_ids, target_kind, idempotenc
         if existing.payload_digest != digest:
             raise ValidationError('This submission key identifies a different installation.')
         return existing
+    if target_kind == 'threat_feeds':
+        from .feed_publications import reserve_feed_identities
+        reserve_feed_identities(snapshot)
     item = InstallationRequest.objects.create(requester=actor, snapshot=snapshot, payload_digest=digest, idempotency_key=idempotency_key)
     InstallationTarget.objects.bulk_create([InstallationTarget(request=item, vdom_id=x['vdom_id'], destination=x) for x in snapshot['destinations']])
     record_event(actor=actor, event_type='installation.submitted', metadata={'request_id': str(item.pk)})
@@ -64,6 +75,10 @@ def installations_for(user, capability='view'):
 
 def require_installation_group(user,item,capability):
     group_id=item.snapshot.get('firewall_group_id')
+    if item.snapshot.get('target_kind') == 'threat_feeds':
+        from .feed_publications import require_feed_request_permission
+        require_feed_request_permission(user, group_id, capability)
+        return
     if item.snapshot.get('target_kind') != 'firewall_group' or not group_id:
         raise PermissionDenied('This historical request has no authorized firewall group. Submit a new group request.')
     require_group_capability(user,group_id,'view')

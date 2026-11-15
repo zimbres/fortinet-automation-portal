@@ -17,7 +17,11 @@ def _mark_interrupted_execution():
     ChangeRequest.objects.filter(execution_status='RUNNING').update(
         execution_status='RECONCILIATION_REQUIRED', error_message='Executor interrupted. Read-only reconciliation is required.')
     from .models import InstallationRequest, InstallationTarget
-    interrupted = InstallationRequest.objects.filter(execution_status='RUNNING')
+    running = InstallationRequest.objects.filter(execution_status='RUNNING')
+    feed_ids = list(running.filter(snapshot__target_kind='threat_feeds').values_list('pk', flat=True))
+    running.filter(pk__in=feed_ids).update(
+        execution_status='PENDING', started_at=None, recovery_required=False)
+    interrupted = running.exclude(pk__in=feed_ids)
     InstallationTarget.objects.filter(request__in=interrupted, execution_status='RUNNING').update(
         execution_status='RECONCILIATION_REQUIRED', error_message='Executor interrupted. Read-only reconciliation is required.')
     interrupted.update(execution_status='RECONCILIATION_REQUIRED', recovery_required=True)

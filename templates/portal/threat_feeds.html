@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block subtitle %}<p class="muted">Serve approved IP and domain lists for each firewall group and address group. Every publication and content update requires approval.</p>{% endblock %}
+{% block actions %}<div class="toolbar"><a class="button" href="{% url 'feed_account_new' %}">Create feed account</a><a class="button primary" href="{% url 'threat_feed_new' %}">Request publication</a></div>{% endblock %}
+{% block content %}
+<div class="feed-configuration">
+<p class="help">Public base URL: <span class="mono">{{ public_url }}</span>. Configure each FortiGate connector with the matching list URL and HTTP Basic authentication.</p>
+<h2>Published address groups</h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Firewall / address group</th><th scope="col">Publication</th><th scope="col">Feed URLs</th><th scope="col">Actions</th></tr></thead>
+<tbody>{% for feed in feeds %}<tr><td>{{ feed.scope.firewall_group.name }}<br><strong>{{ feed.group.entry.name }}</strong></td><td>{% if not feed.scope.firewall_group.enabled %}Firewall group disabled{% elif feed.enabled %}Published{% else %}Disabled{% endif %}<br>Revision {{ feed.revision }}{% if feed.approved_request_id %}<br><a href="{% url 'installation_detail' feed.approved_request_id %}">Approved request</a>{% endif %}</td><td>
+<label for="ip-url-{{ feed.pk }}">IP addresses</label><input id="ip-url-{{ feed.pk }}" class="mono" type="text" readonly value="{{ feed.ip_url }}" aria-label="IP feed URL for {{ feed.group.entry.name }}">
+<label for="domain-url-{{ feed.pk }}">Domains</label><input id="domain-url-{{ feed.pk }}" class="mono" type="text" readonly value="{{ feed.domain_url }}" aria-label="Domain feed URL for {{ feed.group.entry.name }}">
+</td><td><a href="{% url 'threat_feed_update_request' feed.pk %}">Request update</a>{% if feed.enabled %} · <a href="{% url 'threat_feed_edit' feed.pk %}">Disable</a>{% endif %} · <a href="{% url 'threat_feed_delete' feed.pk %}">Revoke access</a></td></tr>
+{% empty %}<tr><td colspan="4"><div class="empty"><h3>No approved publications yet</h3><p>Submit a Threat Feeds request for a firewall group and address groups, then obtain approval.</p></div></td></tr>{% endfor %}</tbody>
+</table></div>
+<h2>Feed accounts</h2>
+<p class="help">Feed accounts use HTTP Basic authentication and cannot sign in to the portal. Disabling an account or removing an assignment revokes access immediately.</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Username</th><th scope="col">Status</th><th scope="col">Assigned firewall / address groups</th><th scope="col">Actions</th></tr></thead>
+<tbody>{% for account in accounts %}<tr><td class="mono">{{ account.username }}</td><td>{% if account.is_active %}Enabled{% else %}Disabled{% endif %}</td><td>{% for feed in account.feeds.all %}{{ feed }}{% if not forloop.last %}, {% endif %}{% empty %}<span class="muted">No assignments — no feed access</span>{% endfor %}</td><td><a href="{% url 'feed_account_edit' account.pk %}">Edit</a> · <a href="{% url 'feed_account_delete' account.pk %}">Delete</a></td></tr>
+{% empty %}<tr><td colspan="4"><div class="empty"><h3>No feed accounts yet</h3><p>Create a feed account and assign the groups it may download.</p></div></td></tr>{% endfor %}</tbody>
+</table></div>
+<p class="help">Lists contain approved IPv4 hosts/subnets and domains, including supported wildcard domains. Empty approved lists return an empty text file. Pending, rejected, or cancelled requests do not change downloads.</p>
+</div>
+{% endblock %}

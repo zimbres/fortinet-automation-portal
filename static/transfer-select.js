@@ -52,6 +52,8 @@
 
     function render() {
       for (const side of sides) {
+        filters[side].disabled = source.disabled;
+        lists[side].disabled = source.disabled;
         const all = options.filter(option => inSide(option, side));
         const shown = all.filter(option => matches(option, side));
         const fragment = document.createDocumentFragment();

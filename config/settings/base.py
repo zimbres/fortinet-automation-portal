@@ -2,8 +2,10 @@
 import os
 from pathlib import Path
 from django.core.exceptions import ImproperlyConfigured
+from config.public_url import normalize_public_url
 
 BASE_DIR = Path(__file__).resolve().parents[2]
+APP_PUBLIC_URL = normalize_public_url(os.environ.get('APP_PUBLIC_URL', ''))
 
 
 def secret_value(name, *, default=None):

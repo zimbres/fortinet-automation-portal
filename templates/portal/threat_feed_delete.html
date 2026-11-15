@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<section class="form-panel"><p>Remove <strong>{{ record }}</strong>? Its feed access will stop immediately.</p><form method="post">{% csrf_token %}<div class="form-actions"><button class="button primary" type="submit">Confirm removal</button><a class="button" href="{% url 'threat_feeds' %}">Cancel</a></div></form></section>{% endblock %}

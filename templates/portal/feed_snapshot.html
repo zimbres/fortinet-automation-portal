@@ -1,0 +1,20 @@
+<div class="installation-snapshot"><h2>Threat Feed changes</h2>
+<p>Firewall group: <strong>{{ snapshot.firewall_group_name }}</strong></p>
+<p class="help">Approval publishes exactly the submitted changes. Pending requests do not change current downloads.</p>
+{% for feed in feed_previews %}<section class="steps"><h3>{{ feed.name }}</h3><p>Current publication revision: {{ feed.base_revision }}</p>
+{% if feed.changes %}
+  {% if feed.changes.enable %}<p class="notice">{% if feed.is_update %}Enable publication{% else %}Create publication{% endif %}</p>{% endif %}
+  {% if feed.changes.ip_added %}<h4>Added IP addresses</h4><pre>{% for value in feed.changes.ip_added %}{{ value }}
+{% endfor %}</pre>{% endif %}
+  {% if feed.changes.ip_removed %}<h4>Removed IP addresses</h4><pre>{% for value in feed.changes.ip_removed %}{{ value }}
+{% endfor %}</pre>{% endif %}
+  {% if feed.changes.domain_added %}<h4>Added domains</h4><pre>{% for value in feed.changes.domain_added %}{{ value }}
+{% endfor %}</pre>{% endif %}
+  {% if feed.changes.domain_removed %}<h4>Removed domains</h4><pre>{% for value in feed.changes.domain_removed %}{{ value }}
+{% endfor %}</pre>{% endif %}
+{% else %}
+  <h4>Requested IP addresses</h4><pre>{{ feed.ip_text|default:'Empty list' }}</pre>
+  <h4>Requested domains</h4><pre>{{ feed.domain_text|default:'Empty list' }}</pre>
+{% endif %}
+<details><summary>Feed URLs</summary><p class="mono">{{ feed.ip_url }}</p><p class="mono">{{ feed.domain_url }}</p></details>
+</section>{% endfor %}</div>

@@ -65,6 +65,62 @@ class AddressRestriction(models.Model):
         return self.value
 
 
+class ThreatFeedScope(models.Model):
+    firewall_group = models.OneToOneField('firewalls.FirewallGroup', on_delete=models.PROTECT, related_name='feed_scope')
+    slug = models.SlugField(max_length=120, unique=True)
+
+    def __str__(self):
+        return self.firewall_group.name
+
+
+class ThreatFeed(models.Model):
+    group = models.ForeignKey(AddressGroup, on_delete=models.PROTECT, related_name='threat_feeds')
+    scope = models.ForeignKey(ThreatFeedScope, on_delete=models.PROTECT, related_name='feeds')
+    slug = models.SlugField(max_length=120)
+    enabled = models.BooleanField(default=False)
+    revision = models.PositiveIntegerField(default=0)
+    ip_text = models.TextField(blank=True, default='')
+    domain_text = models.TextField(blank=True, default='')
+    approved_request = models.ForeignKey('changes.InstallationRequest', null=True, blank=True,
+                                         on_delete=models.PROTECT, related_name='published_feeds')
+
+    class Meta:
+        ordering = ['scope__firewall_group__name', 'group__entry__name']
+        constraints = [
+            models.UniqueConstraint(fields=['scope', 'group'], name='unique_scoped_feed_group'),
+            models.UniqueConstraint(fields=['scope', 'slug'], name='unique_scoped_feed_slug'),
+        ]
+
+    def __str__(self):
+        return f'{self.scope} / {self.group.entry.name}'
+
+
+class ThreatFeedIdentity(models.Model):
+    """Reserve approved URL identities without making content downloadable."""
+    scope = models.ForeignKey(ThreatFeedScope, on_delete=models.CASCADE)
+    group = models.ForeignKey(AddressGroup, on_delete=models.CASCADE)
+    slug = models.SlugField(max_length=120)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['scope','group'], name='unique_reserved_feed_group'),
+            models.UniqueConstraint(fields=['scope','slug'], name='unique_reserved_feed_slug'),
+        ]
+
+
+class FeedAccount(models.Model):
+    username = models.CharField(max_length=150, unique=True)
+    password = models.CharField(max_length=128)
+    is_active = models.BooleanField(default=True)
+    feeds = models.ManyToManyField(ThreatFeed, related_name='accounts', blank=True)
+
+    class Meta:
+        ordering = ['username']
+
+    def __str__(self):
+        return self.username
+
+
 class CatalogImport(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)

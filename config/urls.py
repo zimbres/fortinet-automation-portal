@@ -5,10 +5,20 @@ from django.conf import settings
 from apps.accounts.forms import EmailAuthenticationForm
 from apps.portal import views
 from apps.portal import user_views
+from apps.portal import threat_feed_views as threat_feeds
 from apps.portal import restriction_views as restrictions
 from apps.portal import catalog_views as catalog, installation_views as installations, firewall_group_views as firewall_groups
 
 urlpatterns = [
+    path('threat-feeds/', threat_feeds.configuration, name='threat_feeds'),
+    path('threat-feeds/new/', threat_feeds.publication_edit, name='threat_feed_new'),
+    path('threat-feeds/publications/<int:pk>/edit/', threat_feeds.publication_edit, name='threat_feed_edit'),
+    path('threat-feeds/publications/<int:feed_id>/update/', installations.new_installation, name='threat_feed_update_request'),
+    path('threat-feeds/publications/<int:pk>/delete/', threat_feeds.configuration_delete, name='threat_feed_delete'),
+    path('threat-feeds/accounts/new/', threat_feeds.account_edit, name='feed_account_new'),
+    path('threat-feeds/accounts/<int:pk>/edit/', threat_feeds.account_edit, name='feed_account_edit'),
+    path('threat-feeds/accounts/<int:pk>/delete/', threat_feeds.configuration_delete, {'account':True}, name='feed_account_delete'),
+    path('threat-feeds/<slug:scope_slug>/<slug:slug>/<str:filename>', threat_feeds.download, name='threat_feed_download'),
     path('health/',views.health,name='health'),
     path('',views.dashboard,name='dashboard'),
     path('login/',user_views.PortalLoginView.as_view(template_name='portal/login.html',authentication_form=EmailAuthenticationForm,extra_context={'oidc_enabled':'mozilla_django_oidc' in settings.INSTALLED_APPS}),name='login'),
